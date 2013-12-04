@@ -19,7 +19,7 @@ buildOptions = dict(packages=['fscc'], excludes=[], includes=['re'],
 base = None
 if sys.platform == "win32":
     base = "Win32GUI"
-    
+
 executables = [
     Executable('qfscc.py', base=base)
 ]
