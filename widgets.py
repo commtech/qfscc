@@ -83,7 +83,12 @@ class FPortName(FHBoxLayout):
             self.port = None
 
         try:
-            port_num = int(self.combo_box.currentText().split('FSCC')[1])
+            if os.name == 'nt':
+                port_name = 'FSCC'
+            else:
+                port_name = 'fscc'
+
+            port_num = int(self.combo_box.currentText().split(port_name)[1])
             self.port = fscc.Port(port_num, None, None)
         except IOError as e:
             msgBox = QMessageBox()
