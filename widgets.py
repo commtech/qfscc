@@ -166,7 +166,6 @@ class FRegisters(FVBoxLayout, PortChangedTracker):
             self.table_widget.setItem(i, 0, getattr(self, register_name.lower()))
 
         self.table_widget.horizontalHeader().setStretchLastSection(True)
-        self.table_widget.setMaximumWidth(130)
 
         self.table_widget.horizontalHeader().hide()
         self.table_widget.setVerticalHeaderLabels(self.register_names)
@@ -356,13 +355,9 @@ class FMemoryCap(QGroupBox, PortChangedTracker):
 
         self.input_label = QLabel('Input')
         self.input_line_edit = QLineEdit()
-        self.input_line_edit.setMaximumWidth(60)
-        self.input_line_edit.setFixedWidth(70)
 
         self.output_label = QLabel('Output')
         self.output_line_edit = QLineEdit()
-        self.output_line_edit.setMaximumWidth(60)
-        self.output_line_edit.setFixedWidth(70)
 
         box.addWidget(self.input_label)
         box.addWidget(self.input_line_edit)
