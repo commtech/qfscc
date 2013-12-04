@@ -350,20 +350,25 @@ class FMemoryCap(QGroupBox, PortChangedTracker):
         self.setTitle('Memory Cap (Bytes)')
         self.setFlat(True)
 
-        box = QHBoxLayout()
+        box = QVBoxLayout()
         self.setLayout(box)
 
+        self.input_box = QHBoxLayout()
         self.input_label = QLabel('Input')
         self.input_line_edit = QLineEdit()
+        self.input_box.addWidget(self.input_label)
+        self.input_box.addStretch()
+        self.input_box.addWidget(self.input_line_edit)
 
+        self.output_box = QHBoxLayout()
         self.output_label = QLabel('Output')
         self.output_line_edit = QLineEdit()
+        self.output_box.addWidget(self.output_label)
+        self.output_box.addStretch()
+        self.output_box.addWidget(self.output_line_edit)
 
-        box.addWidget(self.input_label)
-        box.addWidget(self.input_line_edit)
-        box.addStretch()
-        box.addWidget(self.output_label)
-        box.addWidget(self.output_line_edit)
+        box.addLayout(self.input_box)
+        box.addLayout(self.output_box)
 
     def port_changed(self, port):
         self.input_line_edit.setText(str(port.memory_cap.input))
