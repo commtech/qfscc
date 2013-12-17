@@ -5,6 +5,8 @@ from PySide.QtGui import *
 
 from widgets import *
 
+from fscc.tools import list_ports
+
 
 class PortForm(QDialog):
     apply_changes = Signal()
@@ -91,9 +93,12 @@ if __name__ == '__main__':
     form = PortForm()
     form.show()
 
-    # Try and set the default port after the form is already showing
-    default_port = 'FSCC0' if os.name == 'nt' else 'fscc0'
-    form.port_name.set_port(default_port)
+    try:
+        # Try and set the default port after the form is already showing
+        default_port = sorted(list_ports.fsccports())[0][1]
+        form.port_name.set_port(default_port)
+    except IndexError:
+        pass
 
     # Run the main Qt loop
     sys.exit(app.exec_())

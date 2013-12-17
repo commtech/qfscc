@@ -1,8 +1,13 @@
 from PySide.QtCore import Signal
 from PySide.QtGui import *
 
+from fscc.tools import list_ports
+from array import array
+
 import fscc
 import os
+import struct
+import re
 
 
 class FHBoxLayout(QWidget):
@@ -53,12 +58,7 @@ class FPortName(FHBoxLayout):
         self.label = QLabel("Port")
         self.combo_box = QComboBox()
 
-        if os.name == 'nt':
-            #TODO
-            port_names = [port for port in ["FSCC0", "FSCC1"]]
-        else:
-            dev_nodes = os.listdir("/dev/")
-            port_names = sorted(list(filter(is_fscc_port, dev_nodes)))
+        port_names = sorted([x[1] for x in list_ports.fsccports()])
 
         self.combo_box.addItems(port_names)
         self.combo_box.setCurrentIndex(-1)
@@ -83,12 +83,8 @@ class FPortName(FHBoxLayout):
             self.port = None
 
         try:
-            if os.name == 'nt':
-                port_name = 'FSCC'
-            else:
-                port_name = 'fscc'
+            port_num = int(re.search('(\d+)$', self.combo_box.currentText()).group(0))
 
-            port_num = int(self.combo_box.currentText().split(port_name)[1])
             self.port = fscc.Port(port_num, None, None)
         except IOError as e:
             msgBox = QMessageBox()
