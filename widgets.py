@@ -193,35 +193,16 @@ class FClockFrequency(FHBoxLayout, PortChangedTracker):
         self.line_edit.setText('')
 
     def apply_changes(self, port):
-        value_range = (200, 270000000)
+        value_range = (15000, 270000000)
 
         if self.line_edit.text():
             error_title = 'Invalid Clock Frequency'
             error_text = 'Make sure to set the clock frequency to a value ' \
                 'between {:,.0f} and {:,.0f} Hz.'.format(*value_range)
-            frequency = None
 
-            #TODO: This all might be able to be simplified to one messagebox
             try:
-                frequency = int(self.line_edit.text())
+                port.clock_frequency = int(self.line_edit.text())
             except:
-                msgBox = QMessageBox()
-                msgBox.setWindowTitle(error_title)
-                msgBox.setText(error_text)
-                msgBox.setIcon(QMessageBox.Warning)
-                msgBox.exec_()
-                return
-
-            if frequency and (value_range[0] <= frequency <= value_range[1]):
-                try:
-                    port.clock_rate = frequency
-                except:
-                    msgBox = QMessageBox()
-                    msgBox.setWindowTitle('Problem Setting Clock Rate')
-                    msgBox.setText('There was a problem setting the clock rate.')
-                    msgBox.setIcon(QMessageBox.Information)
-                    msgBox.exec_()
-            else:
                 msgBox = QMessageBox()
                 msgBox.setWindowTitle(error_title)
                 msgBox.setText(error_text)
