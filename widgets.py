@@ -1,13 +1,13 @@
+import re
+
 from PySide.QtCore import Signal
 from PySide.QtGui import *
 
-from fscc.tools import list_ports
-from array import array
+from dialogs import *
 
 import fscc
-import os
-import struct
-import re
+from fscc.tools import list_ports
+
 
 
 class FBoxLayout(QWidget):
@@ -39,13 +39,6 @@ class FVBoxLayout(FBoxLayout):
 
     def __init__(self, *args, **kwargs):
         super(FVBoxLayout, self).__init__(QVBoxLayout, *args, **kwargs)
-
-
-def is_fscc_port(filename):
-        if filename.find('fscc') != -1:
-            return True
-        else:
-            return False
 
 
 class FPortName(FHBoxLayout):
@@ -87,18 +80,12 @@ class FPortName(FHBoxLayout):
         if port_name:
             port_num = int(re.search('(\d+)$', port_name).group(0))
 
-            msgBox = QMessageBox()
-            msgBox.setWindowTitle('Problem Opening Port')
-            msgBox.setText('There was a problem opening this port.')
-            msgBox.setIcon(QMessageBox.Information)
-
             try:
                 self.port = fscc.Port(port_num, None, None)
-            except fscc.PortNotFoundError as e:
-                msgBox.exec_()
-            except IOError as e:
-                msgBox.exec_()
-                raise e
+            except fscc.PortNotFoundError:
+                FPortNotFound().exec_()
+            except fscc.InvalidAccessError:
+                FInvalidAccess().exec_()
 
         # Will be None if port connection didn't complete
         self.port_changed.emit(self.port)
@@ -155,17 +142,19 @@ class PortChangedTracker:
 
 class FRegisters(FVBoxLayout, PortChangedTracker):
 
-    def __init__(self, port_widget=None):
+    def __init__(self, port_widget):
         FVBoxLayout.__init__(self)
         PortChangedTracker.__init__(self, port_widget)
 
         self.register_names = fscc.Port.Registers.editable_register_names
-        self.register_names.remove(*fscc.Port.Registers.writeonly_register_names)
+        self.register_names.remove(
+            *fscc.Port.Registers.writeonly_register_names)
 
         table = QTableWidget(len(self.register_names), 1)
 
         for i, register_name in enumerate(self.register_names):
-            setattr(self, register_name.lower(), QTableWidgetItem('{:08x}'.format(0)))
+            widget = QTableWidgetItem('{:08x}'.format(0))
+            setattr(self, register_name.lower(), widget)
             table.setItem(i, 0, getattr(self, register_name.lower()))
 
         header = table.horizontalHeader()
@@ -178,19 +167,20 @@ class FRegisters(FVBoxLayout, PortChangedTracker):
         self.addWidget(table)
 
     def port_changed(self, port):
-        for register_name in self.register_names:
-            register_value = getattr(port.registers, register_name)
-            getattr(self, register_name.lower()).setText('{:08x}'.format(register_value))
+        for reg_name in self.register_names:
+            register_value = getattr(port.registers, reg_name)
+            hex_display = '{:08x}'.format(register_value)
+            getattr(self, reg_name.lower()).setText(hex_display)
 
     def apply_changes(self, port):
-        for register_name in self.register_names:
-            register_value = int(getattr(self, register_name.lower()).text(), 16)
-            setattr(port.registers, register_name, register_value)
+        for reg_name in self.register_names:
+            register_value = int(getattr(self, reg_name.lower()).text(), 16)
+            setattr(port.registers, reg_name, register_value)
 
 
 class FClockFrequency(FHBoxLayout, PortChangedTracker):
 
-    def __init__(self, port_widget=None):
+    def __init__(self, port_widget):
         FHBoxLayout.__init__(self)
         PortChangedTracker.__init__(self, port_widget)
 
@@ -205,26 +195,18 @@ class FClockFrequency(FHBoxLayout, PortChangedTracker):
         self.line_edit.setText('')
 
     def apply_changes(self, port):
-        value_range = (15000, 270000000) #TODO: Move to pyfscc?
-
         if self.line_edit.text():
-            error_title = 'Invalid Clock Frequency'
-            error_text = 'Make sure to set the clock frequency to a value ' \
-                'between {:,.0f} and {:,.0f} Hz.'.format(*value_range)
-
             try:
                 port.clock_frequency = int(self.line_edit.text())
-            except:
-                msgBox = QMessageBox()
-                msgBox.setWindowTitle(error_title)
-                msgBox.setText(error_text)
-                msgBox.setIcon(QMessageBox.Warning)
-                msgBox.exec_()
+            except fscc.InvalidParameterError:
+                FInvalidClockFrequency().exec_()
+            except ValueError:
+                FInvalidClockFrequency().exec_()
 
 
 class FBooleanAttribute(QCheckBox, PortChangedTracker):
 
-    def __init__(self, label, attribute, port_widget=None):
+    def __init__(self, label, attribute, port_widget):
         QCheckBox.__init__(self, label)
         PortChangedTracker.__init__(self, port_widget)
 
@@ -239,35 +221,35 @@ class FBooleanAttribute(QCheckBox, PortChangedTracker):
 
 class FAppendStatus(FBooleanAttribute):
 
-    def __init__(self, port_widget=None):
+    def __init__(self, port_widget):
         super(FAppendStatus, self).__init__(
             'Append Status', 'append_status', port_widget)
 
 
 class FAppendTimestamp(FBooleanAttribute):
 
-    def __init__(self, port_widget=None):
+    def __init__(self, port_widget):
         super(FAppendTimestamp, self).__init__(
             'Append Timestamp', 'append_timestamp', port_widget)
 
 
 class FRxMultiple(FBooleanAttribute):
 
-    def __init__(self, port_widget=None):
+    def __init__(self, port_widget):
         super(FRxMultiple, self).__init__(
             'RX Multiple', 'rx_multiple', port_widget)
 
 
 class FIgnoreTimeout(FBooleanAttribute):
 
-    def __init__(self, port_widget=None):
+    def __init__(self, port_widget):
         super(FIgnoreTimeout, self).__init__(
             'Ignore Timeout', 'ignore_timeout', port_widget)
 
 
 class FTxModifiers(FVBoxLayout, PortChangedTracker):
 
-    def __init__(self, port_widget=None):
+    def __init__(self, port_widget):
         FVBoxLayout.__init__(self)
         PortChangedTracker.__init__(self, port_widget)
 
@@ -331,7 +313,7 @@ class FTxModifiers(FVBoxLayout, PortChangedTracker):
 
 class FMemoryCap(QGroupBox, PortChangedTracker):
 
-    def __init__(self, port_widget=None):
+    def __init__(self, port_widget):
         QGroupBox.__init__(self)
         PortChangedTracker.__init__(self, port_widget)
 
@@ -364,15 +346,20 @@ class FMemoryCap(QGroupBox, PortChangedTracker):
         self.input_line_edit.setText(str(port.memory_cap.input))
         self.output_line_edit.setText(str(port.memory_cap.output))
 
-    # todo: add checks
     def apply_changes(self, port):
-        port.memory_cap.input = int(self.input_line_edit.text())
-        port.memory_cap.output = int(self.output_line_edit.text())
+        try:
+            input_memcap = int(self.input_line_edit.text())
+            output_memcap = int(self.output_line_edit.text())
+        except ValueError:
+            FInvalidMemoryCap().exec_()
+        else:
+            port.memory_cap.input = input_memcap
+            port.memory_cap.output = output_memcap
 
 
 class FCommands(QGroupBox, PortChangedTracker):
 
-    def __init__(self, port_widget=None):
+    def __init__(self, port_widget):
         QGroupBox.__init__(self)
         PortChangedTracker.__init__(self, port_widget)
 
@@ -412,7 +399,7 @@ class FCommands(QGroupBox, PortChangedTracker):
 
 class FFirmware(FHBoxLayout, PortChangedTracker):
 
-    def __init__(self, port_widget=None):
+    def __init__(self, port_widget):
         FHBoxLayout.__init__(self)
         PortChangedTracker.__init__(self, port_widget)
 
@@ -426,6 +413,42 @@ class FFirmware(FHBoxLayout, PortChangedTracker):
         prev = (port.registers.VSTR & 0x0000ff00) >> 8
         frev = port.registers.VSTR & 0x000000ff
         self.version.setText('{:2x}.{:02x}'.format(prev, frev))
+
+    def apply_changes(self, port):
+        pass
+
+
+class FDialogButtonBox(QDialogButtonBox, PortChangedTracker):
+    apply = Signal()
+
+    def __init__(self, port_widget):
+        QDialogButtonBox.__init__(
+            self,
+            QDialogButtonBox.Apply |
+            QDialogButtonBox.Ok |
+            QDialogButtonBox.Close)
+
+        PortChangedTracker.__init__(self, port_widget)
+
+        self.apply_button = self.button(QDialogButtonBox.Apply)
+        self.apply_button.clicked.connect(self.apply_clicked)
+        self.apply_button.setEnabled(False)
+
+        self.ok_button = self.button(QDialogButtonBox.Ok)
+        self.ok_button.setEnabled(False)
+
+        self.close_button = self.button(QDialogButtonBox.Close)
+        self.close_button.setEnabled(True)
+
+        self.setEnabled(True)
+
+    def apply_clicked(self):
+        self.apply.emit()
+
+    def _port_changed(self, port):
+        self.apply_button.setEnabled(bool(port))
+        self.ok_button.setEnabled(bool(port))
+        self.close_button.setEnabled(True)
 
     def apply_changes(self, port):
         pass

@@ -4,6 +4,7 @@ from PySide.QtCore import Signal
 from PySide.QtGui import *
 
 from widgets import *
+from dialogs import *
 
 from fscc.tools import list_ports
 
@@ -15,6 +16,7 @@ class PortForm(QDialog):
         super(PortForm, self).__init__()
 
         self.port_name = FPortName(self.apply_changes)
+
         firmware = FFirmware(self.port_name)
         clock_frequency = FClockFrequency(self.port_name)
         registers = FRegisters(self.port_name)
@@ -26,9 +28,10 @@ class PortForm(QDialog):
         commands = FCommands(self.port_name)
         memory_cap = FMemoryCap(self.port_name)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Apply |
-                                        QDialogButtonBox.Ok |
-                                        QDialogButtonBox.Close)
+        buttons = FDialogButtonBox(self.port_name)
+        buttons.apply.connect(self.apply_clicked)
+        buttons.accepted.connect(self.ok_clicked)
+        buttons.rejected.connect(self.close_clicked)
 
         settings = QVBoxLayout()
         settings.addWidget(self.port_name)
@@ -42,27 +45,19 @@ class PortForm(QDialog):
         settings.addWidget(commands)
         settings.addWidget(memory_cap)
 
-        layout_options = QHBoxLayout()
-        layout_options.addLayout(settings, 1)
-        layout_options.addWidget(registers)
-        layout_options.addStretch()
+        layout_top = QHBoxLayout()
+        layout_top.addLayout(settings, 1)
+        layout_top.addWidget(registers)
+        layout_top.addStretch()
 
-        # Create layout and add widgets
         layout = QVBoxLayout()
 
-        layout.addLayout(layout_options)
+        layout.addLayout(layout_top)
         layout.addWidget(buttons)
 
         # Set dialog layout
         self.setLayout(layout)
 
-        apply_button = buttons.button(QDialogButtonBox.Apply)
-        apply_button.clicked.connect(self.apply_clicked)
-
-        buttons.accepted.connect(self.ok_clicked)
-        buttons.rejected.connect(self.close_clicked)
-
-        #TODO
         self.setFixedSize(self.sizeHint())
         self.setWindowTitle('Fastcom FSCC Settings')
 
@@ -77,19 +72,18 @@ class PortForm(QDialog):
         self.close()
 
 if __name__ == '__main__':
-    # Create the Qt Application
     app = QApplication(sys.argv)
 
-    # Create and show the form
     form = PortForm()
     form.show()
 
-    try:
-        # Try and set the default port after the form is already showing
-        default_port = sorted(list_ports.fsccports())[0][1]
-        form.port_name.set_port(default_port)
-    except IndexError:
-        pass
+    ports = sorted(list_ports.fsccports())
+
+    if ports:
+        form.port_name.set_port(ports[0][1])
+    else:
+        form.port_name.set_port(None)
+        FNoPortsFound().exec_()
 
     # Run the main Qt loop
     sys.exit(app.exec_())
