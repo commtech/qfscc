@@ -19,7 +19,7 @@ class FPortNotFound(QMessageBox):
 
         self.setWindowTitle('Problem Opening Port')
         self.setText('There was a problem opening this port. Make sure the '
-                     'port is disabled')
+                     'port is enabled.')
         self.setIcon(QMessageBox.Information)
 
 
