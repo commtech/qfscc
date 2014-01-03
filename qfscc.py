@@ -15,61 +15,52 @@ class PortForm(QDialog):
         super(PortForm, self).__init__()
 
         self.port_name = FPortName(self.apply_changes)
-        self.firmware = FFirmware(self.port_name)
-        self.clock_frequency = FClockFrequency(self.port_name)
-        self.registers = FRegisters(self.port_name)
-        self.append_status = FAppendStatus(self.port_name)
-        self.append_timestamp = FAppendTimestamp(self.port_name)
-        self.rx_multiple = FRxMultiple(self.port_name)
-        self.ignore_timeout = FIgnoreTimeout(self.port_name)
-        self.tx_modifiers = FTxModifiers(self.port_name)
-        self.commands = FCommands(self.port_name)
-        self.memory_cap = FMemoryCap(self.port_name)
+        firmware = FFirmware(self.port_name)
+        clock_frequency = FClockFrequency(self.port_name)
+        registers = FRegisters(self.port_name)
+        append_status = FAppendStatus(self.port_name)
+        append_timestamp = FAppendTimestamp(self.port_name)
+        rx_multiple = FRxMultiple(self.port_name)
+        ignore_timeout = FIgnoreTimeout(self.port_name)
+        tx_modifiers = FTxModifiers(self.port_name)
+        commands = FCommands(self.port_name)
+        memory_cap = FMemoryCap(self.port_name)
 
-        self.buttons = QDialogButtonBox(QDialogButtonBox.Apply |
+        buttons = QDialogButtonBox(QDialogButtonBox.Apply |
                                         QDialogButtonBox.Ok |
                                         QDialogButtonBox.Close)
 
-        self.firmware.setEnabled(False)
-        self.clock_frequency.setEnabled(False)
-        self.append_status.setEnabled(False)
-        self.append_timestamp.setEnabled(False)
-        self.rx_multiple.setEnabled(False)
-        self.ignore_timeout.setEnabled(False)
-        self.tx_modifiers.setEnabled(False)
-        self.commands.setEnabled(False)
-        self.memory_cap.setEnabled(False)
-        self.registers.setEnabled(False)
+        settings = QVBoxLayout()
+        settings.addWidget(self.port_name)
+        settings.addWidget(firmware)
+        settings.addWidget(clock_frequency)
+        settings.addWidget(append_status)
+        settings.addWidget(append_timestamp)
+        settings.addWidget(rx_multiple)
+        settings.addWidget(ignore_timeout)
+        settings.addWidget(tx_modifiers)
+        settings.addWidget(commands)
+        settings.addWidget(memory_cap)
+
+        layout_options = QHBoxLayout()
+        layout_options.addLayout(settings, 1)
+        layout_options.addWidget(registers)
+        layout_options.addStretch()
 
         # Create layout and add widgets
         layout = QVBoxLayout()
-        layout_options = QHBoxLayout()
-        layout_left = QVBoxLayout()
 
         layout.addLayout(layout_options)
-        layout_options.addLayout(layout_left, 1)
-        layout_options.addWidget(self.registers)
-        layout_options.addStretch()
-        layout.addWidget(self.buttons)
-
-        layout_left.addWidget(self.port_name)
-        layout_left.addWidget(self.firmware)
-        layout_left.addWidget(self.clock_frequency)
-        layout_left.addWidget(self.append_status)
-        layout_left.addWidget(self.append_timestamp)
-        layout_left.addWidget(self.rx_multiple)
-        layout_left.addWidget(self.ignore_timeout)
-        layout_left.addWidget(self.tx_modifiers)
-        layout_left.addWidget(self.commands)
-        layout_left.addWidget(self.memory_cap)
+        layout.addWidget(buttons)
 
         # Set dialog layout
         self.setLayout(layout)
 
-        apply_button = self.buttons.button(QDialogButtonBox.Apply)
+        apply_button = buttons.button(QDialogButtonBox.Apply)
         apply_button.clicked.connect(self.apply_clicked)
-        self.buttons.accepted.connect(self.ok_clicked)
-        self.buttons.rejected.connect(self.close_clicked)
+
+        buttons.accepted.connect(self.ok_clicked)
+        buttons.rejected.connect(self.close_clicked)
 
         #TODO
         self.setFixedSize(self.sizeHint())
