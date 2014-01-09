@@ -25,6 +25,6 @@ executables = [
 ]
 
 setup(name='qfscc',
-      version='1.1.0',
+      version='1.0.1',
       options=dict(build_exe=buildOptions),
       executables=executables)
