@@ -9,7 +9,6 @@ import fscc
 from fscc.tools import list_ports
 
 
-
 class FBoxLayout(QWidget):
 
     def __init__(self, layout_type, *args, **kwargs):
