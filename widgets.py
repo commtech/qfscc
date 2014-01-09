@@ -369,6 +369,9 @@ class FMemoryCap(QGroupBox, PortChangedTracker):
         try:
             input_memcap = int(self.input_line_edit.text())
             output_memcap = int(self.output_line_edit.text())
+
+            if input_memcap < 0 or output_memcap < 0:
+                FInvalidMemoryCap().exec_()
         except ValueError:
             FInvalidMemoryCap().exec_()
         else:
