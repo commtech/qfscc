@@ -2,7 +2,7 @@
 This README file is best viewed [online](http://github.com/commtech/qfscc/).
 
 
-## Dependencies
+## Build Dependencies
 - [Python 3](http://www.python.org/download/) (32-bit)
 - [PySide](http://qt-project.org/wiki/PySide)
 - [pyfscc](http://github.com/commtech/pyfscc/)
