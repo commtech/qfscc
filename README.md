@@ -8,6 +8,11 @@ This README file is best viewed [online](http://github.com/commtech/qfscc/).
 - [pyfscc](http://github.com/commtech/pyfscc/)
 
 
+## Run-time Dependencies
+- OS: Windows XP+ & Linux
+- Visual C++ 2010 Redistributable (Windows only)
+
+
 ## API Compatibility
 We follow [Semantic Versioning](http://semver.org/) when creating releases.
 
