@@ -11,7 +11,7 @@ else:
 # Dependencies are automatically detected, but it might need
 # fine tuning.
 buildOptions = dict(packages=['fscc'], excludes=[], includes=['re'],
-                    include_files=[cfscc_path])
+                    include_files=[cfscc_path], include_msvcr=True)
 
 
 # GUI applications require a different base on Windows (the default is for a
