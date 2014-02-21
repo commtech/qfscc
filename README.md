@@ -8,6 +8,8 @@ This README file is best viewed [online](http://github.com/commtech/qfscc/).
 - [pyfscc](http://github.com/commtech/pyfscc/)
 - [cx_Freeze](http://cx-freeze.sourceforge.net/)
 
+There is currently as bug preventing cx_Freeze and PySide to work correctly without a small source code modification. Here is a [link](http://qt-project.org/forums/viewthread/29881) describing the fix.
+
 
 ## Run-time Dependencies
 - OS: Windows XP+ & Linux
