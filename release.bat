@@ -25,6 +25,10 @@ copy ChangeLog.md %TOP%\ > nul
 echo Copying README...
 copy README.md %TOP%\ > nul
 
+:copy_redist
+echo Copying Redistributable...
+copy vcredist_x86.exe %TOP%\ > nul
+
 :zip_packages
 echo Zipping Drivers...
 cd %TOP%\ > nul
