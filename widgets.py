@@ -71,7 +71,7 @@ class FPortName(FHBoxLayout):
 
         self.label = QLabel('Port')
 
-        port_names = [x[1] for x in sorted(list_ports.fsccfcports())]
+        port_names = [x[1] for x in sorted(list_ports.fsccports())]
 
         self.combo_box = QComboBox()
         self.combo_box.addItems(port_names)
