@@ -77,3 +77,13 @@ class FInvalidMemoryCap(QMessageBox):
         self.setText('The memory cap was not set. Make sure to set valid '
                      'memory cap values.')
         self.setIcon(QMessageBox.Warning)
+
+
+class FInvalidSettingsFile(QMessageBox):
+
+    def __init__(self, *args, **kwargs):
+        super(FInvalidSettingsFile, self).__init__(*args, **kwargs)
+
+        self.setWindowTitle('Invalid Settings File')
+        self.setText('There was a problem opening this settings file. Make sure '
+                     'you select the correct file.')

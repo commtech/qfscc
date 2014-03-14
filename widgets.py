@@ -19,6 +19,7 @@
 """
 
 import re
+import json
 
 from PySide.QtCore import Signal
 from PySide.QtGui import *
@@ -115,13 +116,19 @@ class FPortName(FHBoxLayout):
 
 class PortChangedTracker:
 
-    def __init__(self, port_widget):
+    def __init__(self):
         super(PortChangedTracker, self).__init__()
 
-        port_widget.port_changed.connect(self._port_changed)
-        port_widget.apply_changes.connect(self._apply_changes)
-
         self.setEnabled(False)
+
+    def attach_port_changed(self, signal):
+        signal.connect(self._port_changed)
+
+    def attach_apply_changes(self, signal):
+        signal.connect(self._apply_changes)
+
+    def attach_import_settings(self, signal):
+        signal.connect(self._import_settings)
 
     def _port_changed(self, port):
         # There isn't a port opened so we disable the widget
@@ -144,10 +151,17 @@ class PortChangedTracker:
         if self.isEnabled():
             self.apply_changes(port)
 
+    def _import_settings(self, settings):
+        if self.isEnabled():
+            self.import_settings(settings)
+
     def port_changed(self, port):
         raise NotImplementedError
 
     def apply_changes(self, port):
+        raise NotImplementedError
+
+    def import_settings(self, settings):
         raise NotImplementedError
 
     def supported(self):
@@ -161,9 +175,9 @@ class PortChangedTracker:
 
 class FRegisters(FVBoxLayout, PortChangedTracker):
 
-    def __init__(self, port_widget):
+    def __init__(self):
         FVBoxLayout.__init__(self)
-        PortChangedTracker.__init__(self, port_widget)
+        PortChangedTracker.__init__(self)
 
         self.register_names = fscc.Port.Registers.editable_register_names
         self.register_names.remove(
@@ -196,12 +210,20 @@ class FRegisters(FVBoxLayout, PortChangedTracker):
             register_value = int(getattr(self, reg_name.lower()).text(), 16)
             setattr(port.registers, reg_name, register_value)
 
+    def import_settings(self, settings):
+        for name, value in settings['registers'].items():
+            try:
+                hex_display = '{:08x}'.format(int(value, 0))
+                getattr(self, name.lower()).setText(hex_display)
+            except AttributeError:
+                pass
+
 
 class FClockFrequency(FHBoxLayout, PortChangedTracker):
 
-    def __init__(self, port_widget):
+    def __init__(self):
         FHBoxLayout.__init__(self)
-        PortChangedTracker.__init__(self, port_widget)
+        PortChangedTracker.__init__(self)
 
         label = QLabel('Clock Frequency')
         self.line_edit = QLineEdit()
@@ -222,12 +244,15 @@ class FClockFrequency(FHBoxLayout, PortChangedTracker):
             except ValueError:
                 FInvalidClockFrequency().exec_()
 
+    def import_settings(self, settings):
+        pass
+
 
 class FBooleanAttribute(QCheckBox, PortChangedTracker):
 
-    def __init__(self, label, attribute, port_widget):
+    def __init__(self, label, attribute):
         QCheckBox.__init__(self, label)
-        PortChangedTracker.__init__(self, port_widget)
+        PortChangedTracker.__init__(self)
 
         self.attribute = attribute
 
@@ -237,40 +262,43 @@ class FBooleanAttribute(QCheckBox, PortChangedTracker):
     def apply_changes(self, port):
         setattr(port, self.attribute, self.isChecked())
 
+    def import_settings(self, settings):
+        self.setChecked(settings[self.attribute])
+
 
 class FAppendStatus(FBooleanAttribute):
 
-    def __init__(self, port_widget):
+    def __init__(self):
         super(FAppendStatus, self).__init__(
-            'Append Status', 'append_status', port_widget)
+            'Append Status', 'append_status')
 
 
 class FAppendTimestamp(FBooleanAttribute):
 
-    def __init__(self, port_widget):
+    def __init__(self):
         super(FAppendTimestamp, self).__init__(
-            'Append Timestamp', 'append_timestamp', port_widget)
+            'Append Timestamp', 'append_timestamp')
 
 
 class FRxMultiple(FBooleanAttribute):
 
-    def __init__(self, port_widget):
+    def __init__(self):
         super(FRxMultiple, self).__init__(
-            'RX Multiple', 'rx_multiple', port_widget)
+            'RX Multiple', 'rx_multiple')
 
 
 class FIgnoreTimeout(FBooleanAttribute):
 
-    def __init__(self, port_widget):
+    def __init__(self):
         super(FIgnoreTimeout, self).__init__(
-            'Ignore Timeout', 'ignore_timeout', port_widget)
+            'Ignore Timeout', 'ignore_timeout')
 
 
 class FTxModifiers(FVBoxLayout, PortChangedTracker):
 
-    def __init__(self, port_widget):
+    def __init__(self):
         FVBoxLayout.__init__(self)
-        PortChangedTracker.__init__(self, port_widget)
+        PortChangedTracker.__init__(self)
 
         self.xrep_check_box = QCheckBox('Repeat Frames')
 
@@ -329,12 +357,25 @@ class FTxModifiers(FVBoxLayout, PortChangedTracker):
 
         port.tx_modifiers = tx_modifiers
 
+    def import_settings(self, settings):
+        tx_modifiers = settings['tx_modifiers']
+
+        self.options.setCurrentIndex(0)
+
+        self.xrep_check_box.setChecked(tx_modifiers & fscc.XREP)
+
+        if tx_modifiers & fscc.TXT:
+            self.options.setCurrentIndex(1)
+
+        if tx_modifiers & fscc.TXEXT:
+            self.options.setCurrentIndex(2)
+
 
 class FMemoryCap(QGroupBox, PortChangedTracker):
 
-    def __init__(self, port_widget):
+    def __init__(self):
         QGroupBox.__init__(self)
-        PortChangedTracker.__init__(self, port_widget)
+        PortChangedTracker.__init__(self)
 
         self.setTitle('Memory Cap (Bytes)')
         self.setFlat(True)
@@ -378,12 +419,16 @@ class FMemoryCap(QGroupBox, PortChangedTracker):
             port.memory_cap.input = input_memcap
             port.memory_cap.output = output_memcap
 
+    def import_settings(self, settings):
+        self.input_line_edit.setText(str(settings['memory_cap']['input']))
+        self.output_line_edit.setText(str(settings['memory_cap']['output']))
+
 
 class FCommands(QGroupBox, PortChangedTracker):
 
-    def __init__(self, port_widget):
+    def __init__(self):
         QGroupBox.__init__(self)
-        PortChangedTracker.__init__(self, port_widget)
+        PortChangedTracker.__init__(self)
 
         self.setTitle('Commands')
         self.setFlat(True)
@@ -409,6 +454,9 @@ class FCommands(QGroupBox, PortChangedTracker):
     def apply_changes(self, port):
         pass
 
+    def import_settings(self, settings):
+        pass
+
     def purge_clicked(self):
         self._port.purge()
 
@@ -419,11 +467,75 @@ class FCommands(QGroupBox, PortChangedTracker):
         self._port.registers.CMDR = 0x00000001
 
 
+class FFileOptions(QGroupBox, PortChangedTracker):
+    import_selected = Signal(dict)
+
+    def __init__(self):
+        QGroupBox.__init__(self)
+        PortChangedTracker.__init__(self)
+
+        self.setTitle('Settings')
+        self.setFlat(True)
+
+        box = QHBoxLayout()
+        self.setLayout(box)
+
+        import_button = QPushButton('Import')
+        export_button = QPushButton('Export')
+        defaults_button = QPushButton('Defaults')
+
+        import_button.clicked.connect(self.import_clicked)
+        export_button.clicked.connect(self.export_clicked)
+        defaults_button.clicked.connect(self.defaults_clicked)
+
+        box.addWidget(import_button)
+        box.addWidget(export_button)
+        box.addWidget(defaults_button)
+
+    def import_clicked(self):
+        filename, filter = QFileDialog.getOpenFileName(self, 'Open Settings', None, 'Settings Files (*.fscc)')
+        try:
+            with open(filename, 'r') as infile:
+                try:
+                    settings = json.load(infile)
+                except ValueError:
+                    FInvalidSettingsFile().exec_()
+                else:
+                    self.import_selected.emit(settings)
+        except FileNotFoundError: # Handle 'Cancel' situation
+            pass
+
+    def export_clicked(self):
+        filename, filter = QFileDialog.getSaveFileName(self, 'Save Settings', None, 'Settings Files (*.fscc)')
+        try:
+            with open(filename, 'w') as outfile:
+                json.dump(self._port, outfile, cls=fscc.PortJsonEncoder, sort_keys=True, indent=4)
+        except FileNotFoundError: # Handle 'Cancel' situation
+            pass
+
+    def defaults_clicked(self):
+        try:
+            with open('defaults.fscc', 'r') as infile:
+                settings = json.load(infile)
+                self.import_selected.emit(settings)
+        except FileNotFoundError: # TODO: Handle missing defaults.fscc
+            pass
+
+    def port_changed(self, port):
+        self._port = port
+
+    def apply_changes(self, port):
+        pass
+
+    def import_settings(self, port):
+        pass
+
+
 class FFirmware(FHBoxLayout, PortChangedTracker):
 
-    def __init__(self, port_widget):
+    def __init__(self):
         FHBoxLayout.__init__(self)
-        PortChangedTracker.__init__(self, port_widget)
+        PortChangedTracker.__init__(self)
 
         label = QLabel('Firmware Version')
         self.version = QLabel('')
@@ -439,18 +551,21 @@ class FFirmware(FHBoxLayout, PortChangedTracker):
     def apply_changes(self, port):
         pass
 
+    def import_settings(self, settings):
+        pass
+
 
 class FDialogButtonBox(QDialogButtonBox, PortChangedTracker):
     apply = Signal()
 
-    def __init__(self, port_widget):
+    def __init__(self):
         QDialogButtonBox.__init__(
             self,
             QDialogButtonBox.Apply |
             QDialogButtonBox.Ok |
             QDialogButtonBox.Close)
 
-        PortChangedTracker.__init__(self, port_widget)
+        PortChangedTracker.__init__(self)
 
         self.apply_button = self.button(QDialogButtonBox.Apply)
         self.apply_button.clicked.connect(self.apply_clicked)
@@ -473,4 +588,7 @@ class FDialogButtonBox(QDialogButtonBox, PortChangedTracker):
         self.close_button.setEnabled(True)
 
     def apply_changes(self, port):
+        pass
+
+    def import_settings(self, settings):
         pass

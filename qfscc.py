@@ -37,18 +37,26 @@ class PortForm(QDialog):
 
         self.port_name = FPortName(self.apply_changes)
 
-        firmware = FFirmware(self.port_name)
-        clock_frequency = FClockFrequency(self.port_name)
-        registers = FRegisters(self.port_name)
-        append_status = FAppendStatus(self.port_name)
-        append_timestamp = FAppendTimestamp(self.port_name)
-        rx_multiple = FRxMultiple(self.port_name)
-        ignore_timeout = FIgnoreTimeout(self.port_name)
-        tx_modifiers = FTxModifiers(self.port_name)
-        commands = FCommands(self.port_name)
-        memory_cap = FMemoryCap(self.port_name)
+        firmware = FFirmware()
+        clock_frequency = FClockFrequency()
+        registers = FRegisters()
+        append_status = FAppendStatus()
+        append_timestamp = FAppendTimestamp()
+        rx_multiple = FRxMultiple()
+        ignore_timeout = FIgnoreTimeout()
+        tx_modifiers = FTxModifiers()
+        commands = FCommands()
+        memory_cap = FMemoryCap()
+        file_options = FFileOptions()
+        buttons = FDialogButtonBox()
 
-        buttons = FDialogButtonBox(self.port_name)
+        for obj in [firmware, clock_frequency, registers, append_status,
+                    append_timestamp, rx_multiple, ignore_timeout,
+                    tx_modifiers, commands, memory_cap, file_options, buttons]:
+            obj.attach_port_changed(self.port_name.port_changed)
+            obj.attach_apply_changes(self.port_name.apply_changes)
+            obj.attach_import_settings(file_options.import_selected)
+
         buttons.apply.connect(self.apply_clicked)
         buttons.accepted.connect(self.ok_clicked)
         buttons.rejected.connect(self.close_clicked)
@@ -64,6 +72,7 @@ class PortForm(QDialog):
         settings.addWidget(tx_modifiers)
         settings.addWidget(commands)
         settings.addWidget(memory_cap)
+        settings.addWidget(file_options)
 
         layout_top = QHBoxLayout()
         layout_top.addLayout(settings, 1)
