@@ -509,7 +509,7 @@ class FFileOptions(QGroupBox, PortChangedTracker):
         filename, filter = QFileDialog.getSaveFileName(self, 'Save Settings', None, 'Settings Files (*.fscc)')
         try:
             with open(filename, 'w') as outfile:
-                json.dump(self._port, outfile, cls=fscc.PortJsonEncoder, sort_keys=True, indent=4)
+                outfile.write(self._port.to_json(sort_keys=True, indent=4))
         except FileNotFoundError: # Handle 'Cancel' situation
             pass
 
