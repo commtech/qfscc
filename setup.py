@@ -28,5 +28,7 @@ executables = [
 
 setup(name='qfscc',
       version='1.0.1',
+      description='Fastcom FSCC GUI',
+      author='Commtech, Inc.',
       options=dict(build_exe=buildOptions),
       executables=executables)
