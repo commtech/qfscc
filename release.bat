@@ -1,5 +1,5 @@
 set NAME=qfscc
-set VERSION=1.0.0
+set VERSION=1.0.1
 set DIR_NAME=%NAME%-%VERSION%
 set ZIP_NAME=%NAME%-windows-%VERSION%
 set BIN_DIR=bin
